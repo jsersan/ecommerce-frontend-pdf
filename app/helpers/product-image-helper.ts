@@ -226,60 +226,60 @@ export class ProductImageHelper {
     
     // ========== PLUGS - MAPEO CORREGIDO SEGÚN IMÁGENES REALES ==========
     'plug simple': { 
-      folder: 'dilatador/plug/plug-simple', 
+      folder: 'dilatador/plug-simple', 
       colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
       fallbackColor: 'default'
     },
     'plug': { 
-      folder: 'dilatador/plug/plug-simple', 
+      folder: 'dilatador/plug-simple', 
       colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
       fallbackColor: 'default'
     },
     
     // ✅ CORREGIDO: Plug de Acrílico → negro (según imagen funcional)
     'plug de acrílico': { 
-      folder: 'dilatador/plug/plug-simple', 
+      folder: 'dilatador/plug-simple', 
       colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
       fallbackColor: 'negro' // ✅ CAMBIADO: era 'default', ahora 'negro'
     },
     'plug de acrilico': { 
-      folder: 'dilatador/plug/plug-simple', 
+      folder: 'dilatador/plug-simple', 
       colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
       fallbackColor: 'negro' // ✅ CAMBIADO: era 'default', ahora 'negro'
     },
     
     // ✅ CORREGIDO: Plug de Silicona → rojo (lo más parecido a rosa según imagen funcional)
     'plug de silicona': { 
-      folder: 'dilatador/plug/plug-dobles', 
+      folder: 'dilatador/plug-dobles', 
       colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
       fallbackColor: 'rojo' // ✅ CAMBIADO: era 'default', ahora 'rojo' (rosa)
     },
     'plug silicona': { 
-      folder: 'dilatador/plug/plug-dobles', 
+      folder: 'dilatador/plug-dobles', 
       colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
       fallbackColor: 'rojo' // ✅ CAMBIADO: era 'default', ahora 'rojo' (rosa)
     },
     
     // ✅ CORREGIDO: Plug con Corazón → caoba (según especificación del usuario)
     'plug con corazón': { 
-      folder: 'dilatador/plug/plug-dobles', // ✅ CAMBIADO: era plug-simple, ahora plug-dobles
+      folder: 'dilatador/plug-dobles', // ✅ CAMBIADO: era plug-simple, ahora plug-dobles
       colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'], // ✅ CAMBIADO: colores de plug-dobles
       fallbackColor: 'caoba' // ✅ CAMBIADO: era 'default', ahora 'caoba'
     },
     'plug con corazon': { 
-      folder: 'dilatador/plug/plug-dobles', // ✅ CAMBIADO: era plug-simple, ahora plug-dobles
+      folder: 'dilatador/plug-dobles', // ✅ CAMBIADO: era plug-simple, ahora plug-dobles
       colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'], // ✅ CAMBIADO: colores de plug-dobles
       fallbackColor: 'caoba' // ✅ CAMBIADO: era 'default', ahora 'caoba'
     },
     
     // ✅ MANTENIDO: Dobles → plug-dobles
     'plug doble': { 
-      folder: 'dilatador/plug/plug-dobles', 
+      folder: 'dilatador/plug-dobles', 
       colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
       fallbackColor: 'default'
     },
     'plug dobles': { 
-      folder: 'dilatador/plug/plug-dobles', 
+      folder: 'dilatador/plug-dobles', 
       colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
       fallbackColor: 'default'
     },
@@ -545,6 +545,8 @@ export class ProductImageHelper {
       .toLowerCase()
       .trim();
 
+    console.log("Buscando",normalizedName);
+      
     // Buscar coincidencia exacta
     for (const [key, config] of Object.entries(this.PRODUCT_FOLDER_MAP)) {
       const normalizedKey = key
@@ -569,6 +571,7 @@ export class ProductImageHelper {
     // Mapeo de palabras clave a configuraciones - RUTAS CORREGIDAS
     const keywordMap: { [key: string]: { folder: string; colors: string[]; fallbackColor: string } } = {
       'bisagra': { folder: 'piercing/anillo/anillo-bisagra', colors: ['azul', 'cobre', 'dorado', 'negro', 'multicolor'], fallbackColor: 'dorado' },
+      'plug': { folder: 'dilatador/plug-simple', colors: ['azul', 'negro', 'amarillo', 'verde', 'morado','blanco'], fallbackColor: 'azul' },
       'corazon': { folder: 'piercing/anillo/anillo-corazon', colors: ['dorado', 'negro', 'plateado'], fallbackColor: 'dorado' },
       'triangulo': { folder: 'piercing/labret/labret-triangulos', colors: ['dorado', 'negro', 'plateado', 'rosa'], fallbackColor: 'dorado' },
       'flecha': { folder: 'piercing/barbell/barbell-flecha', colors: ['dorado', 'negro', 'plateado'], fallbackColor: 'plateado' },
