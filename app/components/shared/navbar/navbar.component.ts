@@ -26,8 +26,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
   isUserLoggedIn: boolean = false;
 
   // Suscripciones para evitar memory leaks
-  private userSubscription: Subscription = new Subscription();
-  private cartSubscription: Subscription = new Subscription();
+  private userSubscription: Subscription | null = null;
+  private cartSubscription: Subscription | null = null;
 
   constructor (
     private categoryService: CategoryService,
@@ -41,9 +41,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.loadCategories()
 
     // Suscribirse a cambios en el usuario actual
-    this.userSubscription = this.authService.currentUser.subscribe(user => {
+    this.userSubscription = this.authService.currentUser$.subscribe((user: User | null) => {
       this.currentUser = user
-      this.isUserLoggedIn = !!user
+      this.isUserLoggedIn = !!user && !!user.token
       console.log('Estado de login actualizado:', this.isUserLoggedIn, user?.username || user?.nombre)
     })
 
@@ -70,8 +70,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     // Limpiar suscripciones para evitar memory leaks
-    this.userSubscription.unsubscribe();
-    this.cartSubscription.unsubscribe();
+    if (this.userSubscription) {
+      this.userSubscription.unsubscribe();
+    }
+    if (this.cartSubscription) {
+      this.cartSubscription.unsubscribe();
+    }
   }
 
   // ===== MÉTODOS PARA LOS POPUPS DE LOGIN Y REGISTRO =====
@@ -194,12 +198,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
       return normalizedCatName === normalizedSearchName;
     });
     
-    // console.log(`Buscando categoría: "${name}" (normalizado: "${normalizedSearchName}")`);
     if (category) {
-      // console.log(`Categoría encontrada: ${category.nombre} (ID: ${category.id})`);
+      console.log(`Categoría encontrada: ${category.nombre} (ID: ${category.id})`);
     } else {
-        console.log('Categoría no encontrada. Categorías disponibles:' 
-        ,this.categories.map(c => `${c.nombre} (ID: ${c.id})`));
+      console.log('Categoría no encontrada. Categorías disponibles:', 
+        this.categories.map(c => `${c.nombre} (ID: ${c.id})`));
     }
     
     return category ? category.id : 0;
@@ -305,7 +308,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
    * Verifica si el usuario actual es administrador
    */
   isAdmin (): boolean {
-    return this.currentUser?.username === 'admin' || this.currentUser?.role === 'admin';
+    return this.currentUser?.role === 'admin';
   }
 
   /**
@@ -328,7 +331,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.router.navigate(['/search'], {
         queryParams: { term: this.searchTerm.trim() }
       });
-      // ✅ Limpiar el campo de búsqueda después de buscar
       this.searchTerm = '';
     } else {
       console.log('⚠️ Navbar: Término de búsqueda vacío');

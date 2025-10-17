@@ -1,55 +1,161 @@
-<!-- profile.component.html - ARCHIVO COMPLETO -->
+<div class="profile-container">
+  <!-- Encabezado -->
+  <div class="profile-header">
+    <h1>datos</h1>
+  </div>
 
-<!-- Sección de datos del usuario -->
-<div id="divdatos">
-  <h1 id="titulo">Datos</h1>
-  <!-- Formulario para editar datos personales -->
-  <form [formGroup]="profileForm">
-    <table>
-      <!-- Campo: Nombre de usuario -->
-      <tr>
-        <td>Nombre de usuario: </td>
-        <td><input type="text" id="txtusername" formControlName="username" size="10"/></td>
-      </tr>
-      <!-- Campo: Contraseña (opcional) -->
-      <tr>
-        <td>Contraseña:</td>
-        <td><input type="password" id="txtpass" formControlName="password" size="10"/></td>
-      </tr>
-      <!-- Campo: Email -->
-      <tr>
-        <td>E-mail: </td>
-        <td><input type="email" id="txtemail" formControlName="email" size="20"/></td>
-      </tr>
-      <!-- Campo: Nombre completo -->
-      <tr>
-        <td>Nombre completo</td>
-        <td><input type="text" id="txtnombre" formControlName="nombre" size="25"/></td>
-      </tr>
-      <!-- Campo: Dirección -->
-      <tr>
-        <td>Dirección: </td>
-        <td><input type="text" id="txtdireccion" formControlName="direccion" size="30"/></td>
-      </tr>
-      <!-- Campo: Ciudad -->
-      <tr>
-        <td>Ciudad: </td>
-        <td><input type="text" id="txtciudad" formControlName="ciudad" size="15"/></td>
-      </tr>
-      <!-- Campo: Código postal -->
-      <tr>
-        <td>Código postal: </td>
-        <td><input type="text" id="txtcp" formControlName="cp" size="5"/></td>
-      </tr>
-      <!-- Botón para actualizar datos -->
-      <tr>
-        <td colspan="2" style="text-align: center">
-          <input type="button" id="actualizarDatos" value="ACTUALIZAR DATOS" (click)="updateProfile()" />
-        </td>
-      </tr>
-    </table>
-  </form>
+  <!-- Contenedor principal -->
+  <div class="profile-content" *ngIf="currentUser">
+    
+    <!-- Sección de datos del usuario -->
+    <div class="user-data-section">
+      <div class="section-header">
+        <h2>Información Personal</h2>
+        <button 
+          class="btn-edit" 
+          (click)="toggleEdit()"
+          [disabled]="isLoading">
+          {{ isEditing ? '✕ Cancelar' : '✎ Editar' }}
+        </button>
+      </div>
+
+      <!-- Modo vista -->
+      <div *ngIf="!isEditing" class="user-info-display">
+        <div class="info-group">
+          <label>Usuario:</label>
+          <p>{{ currentUser.username }}</p>
+        </div>
+        
+        <div class="info-group">
+          <label>Nombre Completo:</label>
+          <p>{{ currentUser.nombre }}</p>
+        </div>
+        
+        <div class="info-group">
+          <label>Email:</label>
+          <p>{{ currentUser.email }}</p>
+        </div>
+        
+        <div class="info-group">
+          <label>Dirección:</label>
+          <p>{{ currentUser.direccion }}</p>
+        </div>
+        
+        <div class="info-group">
+          <label>Ciudad:</label>
+          <p>{{ currentUser.ciudad }}</p>
+        </div>
+        
+        <div class="info-group">
+          <label>Código Postal:</label>
+          <p>{{ currentUser.cp }}</p>
+        </div>
+      </div>
+
+      <!-- Modo edición -->
+      <div *ngIf="isEditing" class="user-info-form">
+        <div class="form-group">
+          <label for="username">Usuario:</label>
+          <input 
+            type="text" 
+            id="username"
+            [(ngModel)]="formData.username"
+            [disabled]="isLoading"
+            class="form-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="nombre">Nombre Completo:</label>
+          <input 
+            type="text" 
+            id="nombre"
+            [(ngModel)]="formData.nombre"
+            [disabled]="isLoading"
+            class="form-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input 
+            type="email" 
+            id="email"
+            [(ngModel)]="formData.email"
+            [disabled]="isLoading"
+            class="form-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="direccion">Dirección:</label>
+          <input 
+            type="text" 
+            id="direccion"
+            [(ngModel)]="formData.direccion"
+            [disabled]="isLoading"
+            class="form-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="ciudad">Ciudad:</label>
+          <input 
+            type="text" 
+            id="ciudad"
+            [(ngModel)]="formData.ciudad"
+            [disabled]="isLoading"
+            class="form-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="cp">Código Postal:</label>
+          <input 
+            type="text" 
+            id="cp"
+            [(ngModel)]="formData.cp"
+            [disabled]="isLoading"
+            class="form-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Nueva Contraseña (opcional):</label>
+          <input 
+            type="password" 
+            id="password"
+            [(ngModel)]="formData.password"
+            placeholder="Dejar en blanco para no cambiar"
+            [disabled]="isLoading"
+            class="form-input">
+          <small>Dejar vacío si no deseas cambiar la contraseña</small>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="form-actions">
+          <button 
+            class="btn btn-primary"
+            (click)="updateUserData()"
+            [disabled]="isLoading">
+            {{ isLoading ? 'Guardando...' : 'Guardar Cambios' }}
+          </button>
+          <button 
+            class="btn btn-secondary"
+            (click)="cancelEdit()"
+            [disabled]="isLoading">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de historial de pedidos -->
+    <div class="orders-section">
+      <h2>historial de pedidos</h2>
+      <div id="pedidos">
+        <!-- Los pedidos se cargarán aquí -->
+        <p class="no-orders">Aún no tienes pedidos</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sin usuario autenticado -->
+  <div *ngIf="!currentUser" class="no-user-message">
+    <p>Por favor, inicia sesión para ver tu perfil</p>
+  </div>
 </div>
-
-<!-- Usar el componente dedicado para historial de pedidos -->
-<app-historial-pedidos></app-historial-pedidos>

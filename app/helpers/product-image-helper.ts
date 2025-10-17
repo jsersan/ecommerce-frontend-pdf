@@ -225,66 +225,46 @@ export class ProductImageHelper {
     },
     
     // ========== PLUGS - MAPEO CORREGIDO SEGÚN IMÁGENES REALES ==========
-    'plug simple': { 
-      folder: 'dilatador/plug-simple', 
-      colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
-      fallbackColor: 'default'
-    },
-    'plug': { 
-      folder: 'dilatador/plug-simple', 
-      colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
-      fallbackColor: 'default'
-    },
-    
-    // ✅ CORREGIDO: Plug de Acrílico → negro (según imagen funcional)
-    'plug de acrílico': { 
-      folder: 'dilatador/plug-simple', 
-      colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
-      fallbackColor: 'negro' // ✅ CAMBIADO: era 'default', ahora 'negro'
-    },
-    'plug de acrilico': { 
-      folder: 'dilatador/plug-simple', 
-      colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
-      fallbackColor: 'negro' // ✅ CAMBIADO: era 'default', ahora 'negro'
-    },
-    
-    // ✅ CORREGIDO: Plug de Silicona → rojo (lo más parecido a rosa según imagen funcional)
-    'plug de silicona': { 
-      folder: 'dilatador/plug-dobles', 
-      colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
-      fallbackColor: 'rojo' // ✅ CAMBIADO: era 'default', ahora 'rojo' (rosa)
-    },
-    'plug silicona': { 
-      folder: 'dilatador/plug-dobles', 
-      colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
-      fallbackColor: 'rojo' // ✅ CAMBIADO: era 'default', ahora 'rojo' (rosa)
-    },
-    
-    // ✅ CORREGIDO: Plug con Corazón → caoba (según especificación del usuario)
-    'plug con corazón': { 
-      folder: 'dilatador/plug-dobles', // ✅ CAMBIADO: era plug-simple, ahora plug-dobles
-      colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'], // ✅ CAMBIADO: colores de plug-dobles
-      fallbackColor: 'caoba' // ✅ CAMBIADO: era 'default', ahora 'caoba'
-    },
-    'plug con corazon': { 
-      folder: 'dilatador/plug-dobles', // ✅ CAMBIADO: era plug-simple, ahora plug-dobles
-      colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'], // ✅ CAMBIADO: colores de plug-dobles
-      fallbackColor: 'caoba' // ✅ CAMBIADO: era 'default', ahora 'caoba'
-    },
-    
-    // ✅ MANTENIDO: Dobles → plug-dobles
-    'plug doble': { 
-      folder: 'dilatador/plug-dobles', 
-      colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
-      fallbackColor: 'default'
-    },
-    'plug dobles': { 
-      folder: 'dilatador/plug-dobles', 
-      colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
-      fallbackColor: 'default'
-    },
+   // ✅ PLUGS - CORRECCIÓN ESPECÍFICA
+  'plug simple': { 
+    folder: 'dilatador/plug-simple',  // ✅ Asegúrate que sea exactamente esto
+    colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
+    fallbackColor: 'negro'  // ✅ IMPORTANTE: Cambiar a 'negro' si la imagen por defecto es negra
+  },
+  
+  'plug': { 
+    folder: 'dilatador/plug-simple',  // ✅ Sin 's' final
+    colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
+    fallbackColor: 'negro'
+  },
+  
+  'plug de acrílico': { 
+    folder: 'dilatador/plug-simple', 
+    colors: ['amarillo', 'azul', 'blanco', 'default', 'morado', 'negro', 'verde'],
+    fallbackColor: 'negro'
+  },
+  
+  'plug de silicona': { 
+    folder: 'dilatador/plug-dobles', 
+    colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
+    fallbackColor: 'rojo'
+  },
+  
+  'plug con corazón': { 
+    folder: 'dilatador/plug-dobles', 
+    colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
+    fallbackColor: 'caoba'
+  },
+  
+  'plug doble': { 
+    folder: 'dilatador/plug-dobles', 
+    colors: ['azul', 'beige', 'caoba', 'default', 'morado', 'rojo', 'verde'],
+    fallbackColor: 'default'
+  },
     
     // ========== DILATADORES Y EXPANDERS - RUTAS CORREGIDAS ==========
+
+    
     'set de dilatadores': { 
       folder: 'dilatador/set-dilatadores', 
       colors: ['blanco', 'default', 'rosa', 'plateado', 'violeta'], 
@@ -648,44 +628,42 @@ export class ProductImageHelper {
     productName?: string
   ): string {
     const { folder, colors, fallbackColor } = config;
-
-    // PASO 1: Si hay un color seleccionado y está disponible
-    if (selectedColor && colors.includes(selectedColor.toLowerCase())) {
-      const colorFileName = selectedColor.toLowerCase();
-      const imagePath = `assets/images/${folder}/${colorFileName}.jpg`;
-      console.log(`🎨 Usando color seleccionado: ${imagePath}`);
-      return imagePath;
+  
+    // PASO 1: Validar que la carpeta exista correctamente
+    if (!folder || folder.trim() === '') {
+      console.error('❌ Error: La carpeta no está definida');
+      return this.getFallbackImage();
     }
-
-    // PASO 2: Intentar con el color de fallback definido
+  
+    console.log(`📁 Intentando carpeta: assets/images/${folder}`);
+  
+    // PASO 2: Si hay un color seleccionado y está disponible
+    if (selectedColor) {
+      const normalizedColor = selectedColor.toLowerCase().trim();
+      if (colors.includes(normalizedColor)) {
+        const imagePath = `assets/images/${folder}/${normalizedColor}.jpg`;
+        console.log(`✅ Usando color seleccionado: ${imagePath}`);
+        return imagePath;
+      }
+    }
+  
+    // PASO 3: Usar el color de fallback
     if (fallbackColor && colors.includes(fallbackColor)) {
       const imagePath = `assets/images/${folder}/${fallbackColor}.jpg`;
-      console.log(`🔄 Usando color de fallback: ${imagePath}`);
+      console.log(`🎯 Usando fallbackColor (${fallbackColor}): ${imagePath}`);
       return imagePath;
     }
-
-    // PASO 3: Usar una selección determinística basada en el nombre del producto
+  
+    // PASO 4: Si no hay fallback válido, usar el primer color disponible
     if (colors.length > 0) {
-      let colorIndex = 0;
-      
-      // ✅ NUEVO: Crear variación determinística basada en el nombre del producto
-      if (productName && colors.length > 1) {
-        // Crear un hash simple del nombre del producto para selección determinística
-        let hash = 0;
-        for (let i = 0; i < productName.length; i++) {
-          hash = ((hash << 5) - hash + productName.charCodeAt(i)) & 0x7fffffff;
-        }
-        colorIndex = hash % colors.length;
-      }
-      
-      const selectedColorFromArray = colors[colorIndex];
-      const imagePath = `assets/images/${folder}/${selectedColorFromArray}.jpg`;
-      console.log(`📝 Usando color determinístico (${colorIndex}): ${imagePath}`);
+      const firstColor = colors[0];
+      const imagePath = `assets/images/${folder}/${firstColor}.jpg`;
+      console.log(`⚠️ Fallback no válido, usando primer color (${firstColor}): ${imagePath}`);
       return imagePath;
     }
-
-    // PASO 4: Fallback final
-    console.warn(`⚠️ No se pudo determinar imagen para la carpeta: ${folder}`);
+  
+    // PASO 5: Error final
+    console.error(`❌ No se pudo generar ruta para: ${folder}, colores: ${colors}`);
     return this.getFallbackImage();
   }
 
@@ -747,4 +725,40 @@ export class ProductImageHelper {
     
     console.groupEnd();
   }
+
+  // ============================================================
+// SOLUCIÓN 3: Método de DEBUG para el Plug
+// ============================================================
+
+// Añade esto en tu componente para verificar qué está pasando:
+debugPlugImage(): void {
+  console.group('🐛 DEBUG: Imagen del Plug');
+  
+  const plugProduct = {
+    id: 4,
+    nombre: 'Plug',
+    descripcion: 'Plug acompañado sin rosca de acrílico. Disponible en diferentes...',
+    precio: 1.40,
+    categoria_id: 4,
+    imagen: 'negro.jpg'  // Esto es lo que viene del backend
+  };
+  
+  console.log('Producto:', plugProduct);
+  
+  // Prueba el helper directamente
+  const imagePath = ProductImageHelper.getProductImageSrc(plugProduct, 'negro');
+  console.log('Ruta generada:', imagePath);
+  
+  // Prueba con diferentes colores
+  console.log('--- Pruebas con diferentes colores ---');
+  ['negro', 'azul', 'default', 'blanco'].forEach(color => {
+    const path = ProductImageHelper.getProductImageSrc(plugProduct, color);
+    console.log(`  ${color}: ${path}`);
+  });
+  
+  // Información del helper
+  ProductImageHelper.debugProduct('plug');
+  
+  console.groupEnd();
+}
 }

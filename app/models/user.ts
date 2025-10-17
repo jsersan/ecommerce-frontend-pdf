@@ -1,12 +1,11 @@
 export interface User {
-  token: any;
-  id?: number;
+  id: number;
   username: string;
   nombre: string;
   email: string;
-  password?: string;
   direccion: string;
   ciudad: string;
-  role:string;
   cp: string;
+  role?: string; // 'user' o 'admin'
+  token?: string; // JWT Token
 }

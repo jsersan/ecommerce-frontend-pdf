@@ -1,10 +1,7 @@
 import { Injectable } from '@angular/core'
 import { HttpClient } from '@angular/common/http'
-// Importaciones correctas de RxJS
-import { Observable, of } from 'rxjs'
-import { BehaviorSubject } from 'rxjs'
-import { catchError } from 'rxjs/operators';
-import { map } from 'rxjs/operators';
+import { Observable, of, BehaviorSubject } from 'rxjs'
+import { catchError, map } from 'rxjs/operators';
 import { Product } from '../models/product'
 import { Category } from '../models/category'
 import { environment } from '../../environments/environment'
@@ -14,13 +11,16 @@ import { ProductImageHelper } from '../helpers/product-image-helper';
   providedIn: 'root'
 })
 export class ProductService {
-  // Corregido: Usando la ruta correcta
+  // URL base de la API
   private apiUrl = `${environment.apiUrl}/productos`
   private categoryUrl = `${environment.apiUrl}/categorias`
 
   // Subject para el popup de producto
   private selectedProductSubject = new BehaviorSubject<Product | null>(null)
   selectedProduct$ = this.selectedProductSubject.asObservable()
+
+  // Imagen por defecto
+  defaultImage = 'assets/images/default.jpg'
 
   // ✅ MAPEO ACTUALIZADO BASADO EN LA ESTRUCTURA REAL DE ASSETS
   private readonly PRODUCT_COLORS_MAP: { [key: string]: string[] } = {
@@ -133,89 +133,140 @@ export class ProductService {
     'piercing': ['azul', 'cobre', 'dorado', 'negro', 'multicolor']
   };
 
-  // Imagen por defecto
-  defaultImage = 'assets/images/default.jpg'
-
   constructor (private http: HttpClient) {}
 
-  // Método para obtener todos los productos
+  /**
+   * Obtener todos los productos
+   */
   getProducts (): Observable<Product[]> {
+    console.log('📦 ProductService: Obteniendo todos los productos...');
+    
     return this.http.get<Product[]>(this.apiUrl).pipe(
       catchError(error => {
-        console.error('Error al obtener productos:', error)
+        console.error('❌ Error al obtener productos:', error)
         return of([])
       })
     )
   }
 
-  // Método para obtener un producto específico
+  /**
+   * ✅ NUEVO: Buscar productos por término
+   * 
+   * Este método hace una petición a: GET /api/productos/search?q=término
+   */
+  searchProducts (term: string): Observable<Product[]> {
+    // Validar que el término no esté vacío
+    if (!term || term.trim() === '') {
+      console.warn('⚠️ ProductService: Búsqueda con término vacío');
+      return of([]);
+    }
+
+    // Construir la URL con el parámetro de búsqueda codificado
+    const encodedTerm = encodeURIComponent(term.trim());
+    const url = `${this.apiUrl}/search?q=${encodedTerm}`;
+    
+    console.log('🔍 ProductService: Buscando productos...');
+    console.log('   Término:', term);
+    console.log('   URL:', url);
+    
+    return this.http.get<Product[]>(url).pipe(
+      map(products => {
+        console.log(`✅ Búsqueda completada: ${products.length} productos encontrados`);
+        return products;
+      }),
+      catchError(error => {
+        console.error(`❌ Error al buscar productos con término "${term}":`, error);
+        console.error('   Status:', error.status);
+        console.error('   Message:', error.message);
+        console.error('   URL:', url);
+        return of([])
+      })
+    )
+  }
+
+  /**
+   * Obtener un producto específico por ID
+   */
   getProduct (id: number): Observable<Product> {
     const url = `${this.apiUrl}/${id}`
+    console.log(`🔍 ProductService: Obteniendo producto ID ${id}`);
+    
     return this.http.get<Product>(url).pipe(
       catchError(error => {
-        console.error(`Error al obtener producto ${id}:`, error)
+        console.error(`❌ Error al obtener producto ${id}:`, error)
         throw error
       })
     )
   }
 
-  // Método pour obtener productos por categoría
+  /**
+   * Obtener productos por categoría
+   */
   getProductsByCategory (categoryId: number): Observable<Product[]> {
     const url = `${this.apiUrl}/categoria/${categoryId}`
-    console.log(
-      'Solicitando productos por categoría:',
-      categoryId,
-      'desde:',
-      url
-    )
+    console.log('📂 ProductService: Solicitando productos por categoría:', categoryId, 'desde:', url)
+    
     return this.http.get<Product[]>(url).pipe(
       catchError(error => {
+        console.error(`❌ Error al obtener productos de la categoría ${categoryId}:`, error);
         return of([])
       })
     )
   }
 
-  // Método para obtener una categoría específica
+  /**
+   * Obtener una categoría específica
+   */
   getCategory (id: number): Observable<Category> {
     const url = `${this.categoryUrl}/${id}`
+    console.log(`🏷️ ProductService: Obteniendo categoría ID ${id}`);
+    
     return this.http.get<Category>(url)
   }
 
-  // ✅ MÉTODO MEJORADO PARA OBTENER COLORES ESPECÍFICOS DEL PRODUCTO
+  /**
+   * Obtener colores específicos del producto
+   */
   getProductColors(productId: number): Observable<string[]> {
-    console.log('🎨 Obteniendo colores para producto ID:', productId);
+    console.log('🎨 ProductService: Obteniendo colores para producto ID:', productId);
     
-    // Primero obtenemos el producto para conocer su nombre
     return this.getProduct(productId).pipe(
       map(product => {
         if (!product || !product.nombre) {
           console.warn('⚠️ Producto no encontrado o sin nombre');
-          return ['Estándar'];
+          return ['negro', 'azul', 'blanco'];
         }
         
         const productName = product.nombre.toLowerCase().trim();
         console.log('🔍 Buscando colores para:', productName);
         
-        // Usar ProductImageHelper para obtener colores consistentes
-        const availableColors = ProductImageHelper.getAvailableColors(productName);
+        // Si es un plug, retornar colores específicos
+        if (productName.includes('plug')) {
+          const plugColors = ['negro', 'azul', 'amarillo', 'blanco', 'verde', 'morado'];
+          console.log('✅ Colores de plug:', plugColors);
+          return plugColors;
+        }
         
+        // Para otros productos, usar ProductImageHelper
+        const availableColors = ProductImageHelper.getAvailableColors(productName);
         console.log('✅ Colores disponibles:', availableColors);
         return availableColors.length > 0 ? availableColors : ['Estándar'];
       }),
       catchError(error => {
-        console.error('❌ Error obteniendo colores del producto:', error);
-        return of(['Estándar']);
+        console.error('❌ Error obteniendo colores:', error);
+        return of(['negro', 'azul', 'blanco']);
       })
     );
   }
 
-  // ✅ MÉTODO ALTERNATIVO PARA OBTENER COLORES (usando mapeo local como fallback)
+  /**
+   * Obtener colores disponibles para un producto (usando mapeo local como fallback)
+   */
   private getAvailableColorsForProduct(productName: string): string[] {
-    // Normalizar el nombre del producto
     const normalizedName = productName
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // Quitar tildes
+      .replace(/[\u0300-\u036f]/g, "")
       .trim();
     
     console.log('🔍 Nombre normalizado:', normalizedName);
@@ -257,7 +308,9 @@ export class ProductService {
     return ['Estándar'];
   }
 
-  // ✅ ESTRATEGIA 3: Coincidencias parciales flexibles mejoradas
+  /**
+   * Estrategia: Coincidencias parciales flexibles mejoradas
+   */
   private findBestPartialMatch(productName: string): string[] {
     let bestMatch: { key: string, colors: string[], score: number } = { key: '', colors: [], score: 0 };
     
@@ -268,10 +321,9 @@ export class ProductService {
         .replace(/[\u0300-\u036f]/g, "")
         .trim();
       
-      // Calcular puntuación de similitud
       const score = this.calculateSimilarityScore(productName, normalizedKey);
       
-      if (score > bestMatch.score && score > 0.6) { // Umbral de similitud
+      if (score > bestMatch.score && score > 0.6) {
         bestMatch = { key, colors, score };
       }
     }
@@ -284,25 +336,25 @@ export class ProductService {
     return [];
   }
 
-  // ✅ Calcular puntuación de similitud entre dos strings
+  /**
+   * Calcular puntuación de similitud entre dos strings
+   */
   private calculateSimilarityScore(str1: string, str2: string): number {
-    const words1 = str1.split(' ').filter(w => w.length > 2); // Solo palabras de más de 2 caracteres
+    const words1 = str1.split(' ').filter(w => w.length > 2);
     const words2 = str2.split(' ').filter(w => w.length > 2);
     
     if (words1.length === 0 || words2.length === 0) return 0;
     
     let matchCount = 0;
-    let totalWords = Math.max(words1.length, words2.length);
+    const totalWords = Math.max(words1.length, words2.length);
     
-    // Contar palabras que coinciden exactamente
     for (const word1 of words1) {
       if (words2.includes(word1)) {
         matchCount += 1;
       } else {
-        // Buscar coincidencias parciales (una palabra contiene a la otra)
         for (const word2 of words2) {
           if (word1.includes(word2) || word2.includes(word1)) {
-            matchCount += 0.7; // Puntuación menor para coincidencias parciales
+            matchCount += 0.7;
             break;
           }
         }
@@ -312,7 +364,9 @@ export class ProductService {
     return matchCount / totalWords;
   }
 
-  // ✅ Búsqueda por palabras clave específicas
+  /**
+   * Búsqueda por palabras clave específicas
+   */
   private findByKeywords(productName: string): string[] {
     const keywordMatches: { [key: string]: string[] } = {
       'bisagra': ['azul', 'cobre', 'dorado', 'negro', 'multicolor'],
@@ -346,7 +400,9 @@ export class ProductService {
     return [];  
   }
 
-  // ✅ Búsqueda por tipo de producto
+  /**
+   * Búsqueda por tipo de producto
+   */
   private findByProductType(productName: string): string[] {
     const typeMatches: { [key: string]: string[] } = {
       'anillo': ['azul', 'cobre', 'dorado', 'negro', 'multicolor'],
@@ -372,67 +428,80 @@ export class ProductService {
     return [];
   }
 
-  // Método para seleccionar un producto para el popup
+  /**
+   * Seleccionar un producto para el popup
+   */
   selectProductForPopup(product: Product): void {
+    console.log('🎯 Producto seleccionado para popup:', product.nombre);
     this.selectedProductSubject.next(product);
   }
 
-  // Método para limpiar el producto seleccionado
+  /**
+   * Limpiar el producto seleccionado
+   */
   clearSelectedProduct(): void {
-    console.log('Limpiando producto seleccionado');
+    console.log('🧹 Limpiando producto seleccionado');
     this.selectedProductSubject.next(null);
   }
 
-  // Método para cerrar el popup
+  /**
+   * Cerrar el popup de producto
+   */
   closeProductPopup (): void {
+    console.log('❌ Cerrando popup de producto');
     this.selectedProductSubject.next(null)
   }
 
-  // Método para añadir un nuevo producto
+  /**
+   * Añadir un nuevo producto
+   */
   addProduct (product: Product): Observable<Product> {
+    console.log('➕ ProductService: Añadiendo nuevo producto:', product.nombre);
     return this.http.post<Product>(this.apiUrl, product)
   }
 
-  // Método para subir imágenes de productos
+  /**
+   * Subir imágenes de productos
+   */
   uploadProductImages (productId: number, files: File[]): Observable<any> {
     const formData = new FormData()
     files.forEach((file, index) => {
       formData.append('images', file, file.name)
     })
+    console.log(`📤 Subiendo ${files.length} imágenes para producto ID ${productId}`);
     return this.http.post<any>(`${this.apiUrl}/${productId}/images`, formData)
   }
 
-  // Método para actualizar un producto existente
+  /**
+   * Actualizar un producto existente
+   */
   updateProduct (productId: number, product: Product): Observable<Product> {
     const url = `${this.apiUrl}/${productId}`
+    console.log(`✏️ Actualizando producto ID ${productId}:`, product.nombre);
     return this.http.put<Product>(url, product)
   }
 
-  // Método para eliminar un producto
+  /**
+   * Eliminar un producto
+   */
   deleteProduct (productId: number): Observable<any> {
     const url = `${this.apiUrl}/${productId}`
+    console.log(`🗑️ Eliminando producto ID ${productId}`);
     return this.http.delete<any>(url)
   }
 
-  // Método para buscar productos
-  searchProducts (term: string): Observable<Product[]> {
-    const url = `${this.apiUrl}/search?q=${term}`
-    return this.http.get<Product[]>(url).pipe(
-      catchError(error => {
-        console.error(`Error al buscar productos con término "${term}":`, error)
-        return of([])
-      })
-    )
-  }
-
-  // Método para obtener la ruta de la imagen del producto
+  /**
+   * Obtener la ruta de la imagen del producto
+   */
   getProductImageSrc(product: Product, selectedColor?: string): string {
     return ProductImageHelper.getProductImageSrc(product, selectedColor);
   }
 
-  // Método para obtener productos destacados (para la página principal)
+  /**
+   * Obtener productos destacados (para la página principal)
+   */
   getFeaturedProducts(): Observable<Product[]> {
-    console.log('Solicitando productos destacados desde:', this.apiUrl);
+    console.log('⭐ Solicitando productos destacados desde:', this.apiUrl);
     
     return this.getProducts().pipe(
       map(products => {
@@ -441,11 +510,13 @@ export class ProductService {
     );
   }
 
-  // Método mejorado para manejar errores de carga de imágenes
+  /**
+   * Manejar errores de carga de imágenes
+   */
   handleImageError (event: Event): void {
     const img = event.target as HTMLImageElement
     const originalSrc = img.src
-    console.error(`Error al cargar imagen: ${originalSrc}`)
+    console.error(`❌ Error al cargar imagen: ${originalSrc}`)
 
     img.src = this.defaultImage
     img.onerror = null

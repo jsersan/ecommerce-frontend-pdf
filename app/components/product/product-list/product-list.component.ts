@@ -49,11 +49,26 @@ export class ProductListComponent implements OnInit {
 
   // Método implementado correctamente para abrir el popup del producto
   openProductPopup(product: Product, event: Event): void {
-    // Prevenir la navegación normal (si usa routerLink)
     event.preventDefault();
     event.stopPropagation();
     
-    // Seleccionar el producto para el popup
+    console.group('🖼️ Abriendo producto popup');
+    console.log('Producto:', product);
+    console.log('Nombre:', product.nombre);
+    console.log('ID:', product.id);
+    
+    // ✅ DEBUG: Mostrar ruta de imagen
+    const imageSrc = this.productService.getProductImageSrc(product);
+    console.log('Ruta de imagen generada:', imageSrc);
+    
+    // ✅ VERIFICAR: Si la imagen existe
+    const img = new Image();
+    img.onload = () => console.log('✅ Imagen cargada correctamente');
+    img.onerror = () => console.error('❌ Error al cargar imagen:', imageSrc);
+    img.src = imageSrc;
+    
+    console.groupEnd();
+    
     this.productService.selectProductForPopup(product);
   }
 
