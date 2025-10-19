@@ -550,6 +550,7 @@ export class ProductImageHelper {
   private static findByKeywords(productName: string): { folder: string; colors: string[]; fallbackColor: string } | null {
     // Mapeo de palabras clave a configuraciones - RUTAS CORREGIDAS
     const keywordMap: { [key: string]: { folder: string; colors: string[]; fallbackColor: string } } = {
+      'banana': { folder: 'piercing/banana/banana-simple', colors: ['dorado', 'plateado', 'multicolor'], fallbackColor: 'dorado' },
       'bisagra': { folder: 'piercing/anillo/anillo-bisagra', colors: ['azul', 'cobre', 'dorado', 'negro', 'multicolor'], fallbackColor: 'dorado' },
       'plug': { folder: 'dilatador/plug-simple', colors: ['azul', 'negro', 'amarillo', 'verde', 'morado','blanco'], fallbackColor: 'azul' },
       'corazon': { folder: 'piercing/anillo/anillo-corazon', colors: ['dorado', 'negro', 'plateado'], fallbackColor: 'dorado' },

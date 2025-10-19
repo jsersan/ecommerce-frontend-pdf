@@ -1,22 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
+import { OrderService } from '../../services/order.service';
+import { PdfService } from '../../services/pdf.service';
+import { Order } from '../../models/order';
 import { User } from '../../models/user';
 import { Subscription } from 'rxjs';
 
-interface Pedido {
-  id: number;
-  fecha: Date;
-  total: number;
+interface PedidoExpandible extends Order {
   expanded?: boolean;
-}
-
-interface LineaPedido {
-  id: number;
-  idpedido: number;
-  nombre: string;
-  color: string;
-  cantidad: number;
-  precio: number;
 }
 
 @Component({
@@ -25,240 +16,143 @@ interface LineaPedido {
   styleUrls: ['./historial-pedidos.component.scss']
 })
 export class HistorialPedidosComponent implements OnInit, OnDestroy {
+  pedidos: PedidoExpandible[] = [];
+  loading: boolean = true;
   currentUser: User | null = null;
-  pedidos: Pedido[] = [];
-  lineasPedido: LineaPedido[] = [];
-  loading: boolean = false; // ✅ Cambiar isLoading por loading
   error: string | null = null;
-  private userSubscription: Subscription | null = null;
+  private subscription: Subscription | null = null;
 
-  constructor(private authService: AuthService) {
-    console.log('🔧 HistorialPedidosComponent constructor');
+  constructor(
+    private authService: AuthService,
+    private orderService: OrderService,
+    private pdfService: PdfService
+  ) {
+    console.log('🔧 HistorialPedidosComponent inicializado');
   }
 
   ngOnInit(): void {
-    console.log('📄 HistorialPedidosComponent inicializado');
+    console.log('🚀 Inicializando HistorialPedidosComponent');
     
     this.currentUser = this.authService.currentUserValue;
+    console.log('👤 Usuario actual:', this.currentUser?.username || 'No autenticado');
     
-    if (!this.currentUser) {
-      console.warn('⚠️ No hay usuario autenticado');
-      this.error = 'Por favor, inicia sesión para ver tu historial de pedidos';
+    if (this.currentUser && this.currentUser.id) {
+      this.cargarPedidos();
+    } else {
+      console.warn('⚠️ Usuario no autenticado');
+      this.loading = false;
+      this.error = 'Usuario no autenticado';
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+  }
+
+  cargarPedidos(): void {
+    if (!this.currentUser?.id) {
+      console.error('❌ No hay usuario autenticado');
+      this.loading = false;
       return;
     }
+
+    console.log('📦 Cargando pedidos del usuario:', this.currentUser.id);
+    this.loading = true;
+    this.error = null;
     
-    console.log('✅ Usuario cargado:', this.currentUser.username);
-    
-    this.cargarPedidos();
-    
-    this.userSubscription = this.authService.currentUser$.subscribe((user: User | null) => {
-      console.log('👤 Usuario actualizado en historial:', user?.username);
-      this.currentUser = user;
-      
-      if (!user) {
-        this.pedidos = [];
-        this.error = 'Sesión cerrada. Por favor, inicia sesión nuevamente.';
-      } else {
-        this.cargarPedidos();
+    this.subscription = this.orderService.getUserOrders().subscribe({
+      next: (orders: Order[]) => {
+        console.log('📥 Pedidos recibidos:', orders.length);
+        console.log('📋 Estructura de pedidos:', JSON.stringify(orders, null, 2));
+        
+        this.pedidos = orders.map(pedido => ({
+          ...pedido,
+          expanded: false
+        }));
+        
+        this.pedidos.sort((a, b) => (b.id || 0) - (a.id || 0));
+        
+        console.log('✅ Pedidos procesados:', this.pedidos.length);
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error al cargar pedidos:', error);
+        this.loading = false;
+        this.error = error.message || 'Error al cargar los pedidos. Por favor, inténtalo de nuevo.';
       }
     });
   }
 
-  ngOnDestroy(): void {
-    console.log('🗑️ HistorialPedidosComponent destruido');
-    if (this.userSubscription) {
-      this.userSubscription.unsubscribe();
-    }
-  }
-
-  /**
-   * Cargar historial de pedidos del usuario
-   */
-  cargarPedidos(): void {
-    if (!this.currentUser) {
-      console.warn('⚠️ No hay usuario para cargar pedidos');
-      return;
-    }
-
-    this.loading = true;
-    this.error = null;
-    console.log('📥 Cargando historial de pedidos para usuario:', this.currentUser.id);
-
-    try {
-      // Aquí iría la lógica para obtener los pedidos del servicio
-      // Por ahora, inicializamos arrays vacíos
-      this.pedidos = [];
-      this.lineasPedido = [];
-      
-      console.log('✅ Historial de pedidos cargado:', this.pedidos.length, 'pedidos');
-      
-      if (this.pedidos.length === 0) {
-        console.log('ℹ️ El usuario no tiene pedidos aún');
-      }
-    } catch (err) {
-      console.error('❌ Error al cargar historial:', err);
-      this.error = 'Error al cargar el historial de pedidos. Por favor, intenta más tarde.';
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  /**
-   * Recargar pedidos
-   */
-  recargarPedidos(): void {
-    console.log('🔄 Recargando pedidos');
-    this.cargarPedidos();
-  }
-
-  /**
-   * Expandir/Contraer pedido
-   */
   togglePedido(index: number): void {
-    console.log('📋 Alternando pedido índice:', index);
     if (this.pedidos[index]) {
+      console.log(`🔄 Toggle pedido ${this.pedidos[index].id}`);
       this.pedidos[index].expanded = !this.pedidos[index].expanded;
     }
   }
 
-  /**
-   * Obtener líneas de pedido para un pedido específico
-   */
-  getLineasPedido(pedidoId: number): LineaPedido[] {
-    return this.lineasPedido.filter(linea => linea.idpedido === pedidoId);
+  getLineasPedido(idPedido: number): any[] {
+    const pedido = this.pedidos.find(p => p.id === idPedido);
+    const lineas = pedido?.lineas || [];
+    
+    console.log(`📝 Líneas del pedido ${idPedido}:`, lineas);
+    
+    return lineas;
   }
 
   /**
-   * Calcular precio de una línea de pedido
+   * ✅ CORREGIDO: Calcula correctamente el subtotal
+   * Usa 'cantidad' (frontend) no 'cant' (backend)
    */
-  calcularPrecioLinea(linea: LineaPedido): number {
-    return linea.precio * linea.cantidad;
+  calcularPrecioLinea(linea: any): number {
+    // ✅ Usar 'cantidad' que viene transformado por OrderUtils
+    const cantidad = linea.cantidad || linea.cant || 1;
+    const precio = linea.precio || linea.product?.precio || 0;
+    const subtotal = precio * cantidad;
+    
+    console.log(`💰 ${linea.nombre}: ${cantidad} x ${precio} = ${subtotal}`);
+    
+    return subtotal;
   }
 
-  /**
-   * Formatear fecha
-   */
-  formatearFecha(fecha: Date): string {
-    if (!fecha) return '';
-
-    const dateObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
-
-    return new Intl.DateTimeFormat('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(dateObj);
+  formatearFecha(fecha: any): string {
+    if (!fecha) return 'Fecha no disponible';
+    
+    try {
+      const date = new Date(fecha);
+      if (isNaN(date.getTime())) return 'Fecha inválida';
+      
+      return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return 'Fecha no disponible';
+    }
   }
 
-  /**
-   * Obtener el estado de un pedido en español
-   */
-  getOrderStatus(status: string): string {
-    const statusMap: { [key: string]: string } = {
-      'pending': 'Pendiente',
-      'processing': 'Procesando',
-      'shipped': 'Enviado',
-      'delivered': 'Entregado',
-      'cancelled': 'Cancelado',
-      'refunded': 'Reembolsado'
-    };
+  descargarAlbaran(pedidoId: number): void {
+    console.log('📥 Descargando albarán para pedido:', pedidoId);
+    
+    const pedido = this.pedidos.find(p => p.id === pedidoId);
+    if (!pedido) {
+      console.error('❌ Pedido no encontrado');
+      return;
+    }
 
-    return statusMap[status] || status;
+    const lineas = this.getLineasPedido(pedidoId);
+    
+    this.pdfService.generarAlbaran(pedido, lineas, this.currentUser);
   }
 
-  /**
-   * Obtener color del estado del pedido para mostrar en UI
-   */
-  getStatusColor(status: string): string {
-    const colorMap: { [key: string]: string } = {
-      'pending': 'warning',
-      'processing': 'info',
-      'shipped': 'primary',
-      'delivered': 'success',
-      'cancelled': 'danger',
-      'refunded': 'secondary'
-    };
-
-    return colorMap[status] || 'secondary';
-  }
-
-  /**
-   * Formatear precio como moneda en euros
-   */
-  formatPrice(price: number): string {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(price);
-  }
-
-  /**
-   * Verificar si hay pedidos
-   */
-  hasPedidos(): boolean {
-    return this.pedidos && this.pedidos.length > 0;
-  }
-
-  /**
-   * Reintentar cargar pedidos (en caso de error)
-   */
-  retryLoad(): void {
-    console.log('🔄 Reintentando cargar historial de pedidos');
-    this.error = null;
+  recargarPedidos(): void {
+    console.log('🔄 Recargando pedidos...');
     this.cargarPedidos();
   }
 
-  /**
-   * Descargar factura de un pedido
-   */
-  downloadInvoice(orderId: number): void {
-    console.log('📄 Descargando factura del pedido:', orderId);
-    
-    const pedido = this.pedidos.find(p => p.id === orderId);
-    if (pedido) {
-      console.log('Descargando factura para:', pedido.id);
-      // Aquí iría la lógica para descargar la factura
-    }
-  }
-
-  /**
-   * Rastrear pedido
-   */
-  trackOrder(orderId: number): void {
-    console.log('🚚 Rastreando pedido:', orderId);
-    
-    const pedido = this.pedidos.find(p => p.id === orderId);
-    if (pedido) {
-      console.log('Rastreando pedido:', pedido.id);
-      // Aquí iría la lógica para rastrear el pedido
-    }
-  }
-
-  /**
-   * Cancelar un pedido
-   */
-  cancelOrder(orderId: number): void {
-    console.log('❌ Cancelando pedido:', orderId);
-    
-    const pedido = this.pedidos.find(p => p.id === orderId);
-    if (pedido) {
-      console.log('Cancelando pedido:', pedido.id);
-      // Aquí iría la lógica para cancelar el pedido
-    }
-  }
-
-  /**
-   * Solicitar devolución de un pedido
-   */
-  requestReturn(orderId: number): void {
-    console.log('🔄 Solicitando devolución del pedido:', orderId);
-    
-    const pedido = this.pedidos.find(p => p.id === orderId);
-    if (pedido) {
-      console.log('Solicitando devolución para:', pedido.id);
-      // Aquí iría la lógica para solicitar la devolución
-    }
+  hasPedidos(): boolean {
+    return this.pedidos && this.pedidos.length > 0;
   }
 }
